@@ -30,3 +30,7 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Deploy
+        if: ${{ github.event_name == 'push' }}
+        run: echo "Deploying to production..."
