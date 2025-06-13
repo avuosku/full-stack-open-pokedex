@@ -8,22 +8,32 @@ on:
     branches: [main]
     types: [opened, synchronize]
 
-env:
-  SHOULD_SKIP: ${{ contains(join(github.event.commits.*.message, ' '), '#skip') }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && env.SHOULD_SKIP == 'false'
+    if: github.event_name != 'pull_request'
+
+    outputs:
+      should_skip: ${{ steps.check_skip.outputs.skip }}
 
     steps:
       - uses: actions/checkout@v3
 
+      - name: Check if should skip
+        id: check_skip
+        run: |
+          if [[ "${{ join(github.event.commits.*.message, ' ') }}" == *"#skip"* ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Trigger deployment to Render
+        if: steps.check_skip.outputs.skip == 'false'
         run: curl https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
 
       - name: Notify Discord of failure
-        if: ${{ failure() }}
+        if: failure()
         uses: Ilshidur/action-discord@master
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -35,7 +45,7 @@ jobs:
             Author: ${{ github.actor }}
 
       - name: Notify Discord of success
-        if: ${{ success() }}
+        if: success()
         uses: Ilshidur/action-discord@master
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK }}
@@ -46,9 +56,9 @@ jobs:
             Author: ${{ github.actor }}
 
   tag_release:
-    needs: [deploy]
+    needs: deploy
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.SHOULD_SKIP == 'false'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.deploy.outputs.should_skip == 'false'
 
     steps:
       - name: Bump version and push tag
