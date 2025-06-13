@@ -9,3 +9,7 @@ ReactDOM.createRoot(document.getElementById('app')).render(
     <App />
   </Router>
 )
+
+App.get('/health', (req, res) => {
+  res.send('ok');
+});
