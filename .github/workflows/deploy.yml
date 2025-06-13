@@ -35,9 +35,10 @@ jobs:
       - name: Notify Discord of failure
         if: failure()
         uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          message: |
+          args: |
             🚨 Deploy failed!
             Repo: ${{ github.repository }}
             Commit: ${{ github.sha }}
@@ -47,13 +48,15 @@ jobs:
       - name: Notify Discord of success
         if: success()
         uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          message: |
+          args: |
             ✅ Deploy succeeded!
             Repo: ${{ github.repository }}
             Commit: ${{ github.sha }}
             Author: ${{ github.actor }}
+
 
   tag_release:
     needs: deploy
